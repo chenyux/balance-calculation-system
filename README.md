@@ -164,16 +164,18 @@ balance-calculation-system/
 
 ## 5. Architecture & Design
 ### 5.1 System Architecture
+```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Client     │────▶│  AWS ELB    │────▶│  EKS Pods   │
 └─────────────┘     └─────────────┘     └─────────────┘
                                               │
                       ┌───────────────────────┴───────────────────────┐
                       │                                               │
-              ┌─────────────┐                                   ┌─────────────┐
-              │  ElastiCache│                                   │  RDS        │
+              ┌─────────────┐                                   ┌──────────────┐
+              │  ElastiCache│                                   │  RDS         │
               │  (Redis)    │                                   │  (PostgreSQL)│
-              └─────────────┘                                   └─────────────┘
+              └─────────────┘                                   └──────────────┘
+```
 
 ### 5.2 Key Design Choices
 - Data Consistency: Database transactions + pessimistic locks (FOR UPDATE) to handle concurrent updates
@@ -229,6 +231,7 @@ balance-calculation-system/
 1. 目录结构：采用标准 Maven 项目结构，按「实体 - 仓库 - 服务 - 控制器」分层，同时包含 Docker 配置、K8s 资源、测试用例和文档，结构清晰可扩展。
 2. 核心文件：覆盖了应用启动、业务逻辑、数据访问、接口暴露、配置、测试等全流程，所有文件可直接复制使用（需替换云资源地址、镜像地址等自定义配置）。
 3. 部署与测试：提供了完整的 K8s 部署清单和 JMeter 性能测试配置，满足高可用部署和全链路测试的需求，适配 AWS 云环境。
+
 
 
 
