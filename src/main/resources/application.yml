@@ -1,0 +1,72 @@
+spring:
+  # 数据源配置（生产环境从K8s Secret/ConfigMap注入）
+  datasource:
+    url: jdbc:postgresql://${RDS_HOST:localhost}:${RDS_PORT:5432}/${RDS_DB_NAME:balance_db}
+    username: ${RDS_USERNAME:postgres}
+    password: ${RDS_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20 # 连接池最大连接数，适配高并发
+      minimum-idle: 5        # 最小空闲连接数
+  # JPA/Hibernate配置
+  jpa:
+    hibernate:
+      ddl-auto: update # 生产环境建议改为validate（避免自动建表）
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false # 生产环境关闭SQL格式化
+        jdbc.batch_size: 20 # 批量操作优化
+    show-sql: false # 生产环境关闭SQL打印
+  # 缓存配置
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 缓存过期时间1小时
+      cache-null-values: false # 不缓存null值
+      use-key-prefix: true # 使用缓存键前缀
+  # Redis配置
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2000 # 连接超时时间2秒
+    lettuce:
+      pool:
+        max-active: 10 # 最大活跃连接数
+        max-idle: 5    # 最大空闲连接数
+        min-idle: 2    # 最小空闲连接数
+  # 重试机制配置
+  retry:
+    enabled: true
+
+# 服务配置
+server:
+  port: 8080
+  tomcat:
+    max-threads: 200 # Tomcat最大线程数
+    min-spare-threads: 20 # 最小空闲线程数
+
+# 监控配置（Actuator）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics # 暴露监控端点
+  endpoint:
+    health:
+      show-details: always # 显示健康详情
+
+# 日志配置
+logging:
+  level:
+    com.balance.system: INFO # 业务包日志级别
+    org.springframework: WARN # Spring框架日志级别
+    org.hibernate: WARN # Hibernate日志级别
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/balance-system.log # 日志文件路径
+    max-size: 100MB # 单个日志文件最大大小
+    max-history: 7 # 日志文件保留天数

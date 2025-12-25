@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: balance-service
+  namespace: default
+  labels:
+    app: balance-service
+spec:
+  replicas: 3 # 初始3个Pod，保证高可用
+  selector:
+    matchLabels:
+      app: balance-service
+  strategy:
+    rollingUpdate: # 滚动更新，避免服务中断
+      maxSurge: 1 # 扩容时最多超出1个Pod
+      maxUnavailable: 0 # 缩容时最少保留全部可用Pod
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: balance-service
+    spec:
+      containers:
+      - name: balance-service
+        # 替换为你的ECR镜像地址
+        image: <your-ecr-account-id>.dkr.ecr.us-east-1.amazonaws.com/balance-service:v1
+        imagePullPolicy: Always # 每次拉取最新镜像
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        # 环境变量注入
+        env:
+        # 从ConfigMap注入非敏感配置
+        - name: RDS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: balance-service-config
+              key: rds-host
+        - name: RDS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: balance-service-config
+              key: rds-port
+        - name: RDS_DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: balance-service-config
+              key: rds-db-name
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: balance-service-config
+              key: redis-host
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: balance-service-config
+              key: redis-port
+        # 从Secret注入敏感配置
+        - name: RDS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: balance-service-secrets
+              key: rds-username
+        - name: RDS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: balance-service-secrets
+              key: rds-password
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: balance-service-secrets
+              key: redis-password
+        # 资源限制
+        resources:
+          requests: # 资源请求（调度时参考）
+            cpu: 500m # 0.5核
+            memory: 512Mi # 512MB
+          limits: # 资源限制（最大使用量）
+            cpu: 1000m # 1核
+            memory: 1Gi # 1GB
+        # 健康检查
+        livenessProbe: # 存活探针（判断Pod是否存活）
+          httpGet:
+            path: /actuator/health/liveness
+            port: http
+          initialDelaySeconds: 30 # 启动30秒后开始探测
+          periodSeconds: 10 # 每10秒探测一次
+          timeoutSeconds: 5 # 探测超时时间5秒
+          failureThreshold: 3 # 连续3次失败则重启Pod
+        readinessProbe: # 就绪探针（判断Pod是否可提供服务）
+          httpGet:
+            path: /actuator/health/readiness
+            port: http
+          initialDelaySeconds: 10 # 启动10秒后开始探测
+          periodSeconds: 5 # 每5秒探测一次
+          timeoutSeconds: 3 # 探测超时时间3秒
+          failureThreshold: 2 # 连续2次失败则标记为未就绪
+        # 日志配置
+        logging:
+          driver: "json-file"
+          options:
+            max-size: "100m"
+            max-file: "3"
+      restartPolicy: Always # Pod异常时自动重启
+      terminationGracePeriodSeconds: 30 # 优雅停机等待时间30秒

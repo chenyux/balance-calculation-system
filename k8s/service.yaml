@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: balance-service
+  namespace: default
+  labels:
+    app: balance-service
+spec:
+  selector:
+    app: balance-service # 关联Deployment的Pod标签
+  ports:
+  - port: 80 # Service端口
+    targetPort: http # 对应Pod的容器端口
+    protocol: TCP
+    name: http
+  type: LoadBalancer # AWS会自动创建ELB负载均衡器
+  sessionAffinity: None # 关闭会话保持
+  loadBalancerAnnotations:
+    # AWS ELB注解（可选，配置ELB类型）
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"

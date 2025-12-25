@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop # 测试环境自动创建/删除表
+    show-sql: true # 测试环境显示SQL
+  cache:
+    type: redis
+  redis:
+    host: localhost
+    port: 6379
+
+# 日志配置
+logging:
+  level:
+    com.balance.system: DEBUG
+    org.springframework.test.context: INFO

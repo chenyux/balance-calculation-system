@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: balance-service-config
+  namespace: default
+data:
+  # 替换为你的RDS和Redis实际地址
+  rds-host: "balance-db.xxxxxx.us-east-1.rds.amazonaws.com"
+  rds-port: "5432"
+  rds-db-name: "balance_db"
+  redis-host: "balance-redis.xxxxxx.us-east-1.cache.amazonaws.com"
+  redis-port: "6379"

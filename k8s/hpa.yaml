@@ -1,0 +1,38 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: balance-service-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: balance-service # 关联Deployment
+  minReplicas: 3 # 最小Pod数
+  maxReplicas: 10 # 最大Pod数
+  metrics: # 伸缩指标
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70 # CPU利用率超过70%时扩容
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80 # 内存利用率超过80%时扩容
+  behavior: # 伸缩行为
+    scaleUp:
+      stabilizationWindowSeconds: 30 # 扩容稳定窗口30秒（避免频繁扩容）
+      policies:
+      - type: Percent
+        value: 50 # 每次扩容50%的当前Pod数
+        periodSeconds: 60 # 60秒内最多执行一次
+    scaleDown:
+      stabilizationWindowSeconds: 600 # 缩容稳定窗口10分钟（避免频繁缩容）
+      policies:
+      - type: Percent
+        value: 20 # 每次缩容20%的当前Pod数
+        periodSeconds: 300 # 5分钟内最多执行一次
